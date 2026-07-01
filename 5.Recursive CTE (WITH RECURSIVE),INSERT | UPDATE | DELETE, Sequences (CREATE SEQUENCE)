@@ -308,65 +308,87 @@ INSERT INTO job_history VALUES
 
 ##(начало)выполнение запроса №1
 
-SELECT DISTINCT
-    e.job_id AS "JOB_ID",
-    d.location_id AS "LOCATION_ID"
-FROM employees e
-JOIN departments d ON e.department_id = d.department_id
-WHERE e.hire_date > '2003-01-01';
+CREATE TABLE staff
+(
+    id INT PRIMARY KEY,
+    name VARCHAR(64) NOT NULL,
+    department VARCHAR(64) NOT NULL
+);
 
 ##(конец)выполнение запроса №1
 
 ##(начало)выполнение запроса №2
 
-SELECT
-    e.first_name AS "Имя",
-    e.last_name AS "Фамилия",
-    r.region_name AS "Регион"
-FROM employees e
-JOIN departments d ON e.department_id = d.department_id
-JOIN locations l ON d.location_id = l.location_id
-JOIN countries c ON l.country_id = c.country_id
-JOIN regions r ON c.region_id = r.region_id
-ORDER BY e.first_name DESC;
+CREATE SEQUENCE staff_id_seq
+    START WITH 12
+    INCREMENT BY 3
+    NO CYCLE;
 
 ##(конец)выполнение запроса №2
 
 ##(начало)выполнение запроса №3
 
-SELECT
-    e.last_name AS "Фамилия_Р",
-    e.hire_date AS "Дата_Р",
-    m.last_name AS "Фамилия_М",
-    m.hire_date AS "Дата_М"
-FROM employees e
-JOIN employees m ON e.manager_id = m.employee_id
-WHERE e.hire_date < m.hire_date;
+INSERT INTO staff (id, name, department)
+VALUES (nextval('staff_id_seq'), 'Ivan Makarenko', 'Director');
 
 ##(конец)выполнение запроса №3
 
 ##(начало)выполнение запроса №4
 
+INSERT INTO staff (id, name, department)
 SELECT
-    last_name AS "Фамилия_Р",
-    first_name AS "Имя",
-    salary AS "Оклад"
-FROM employees
-WHERE salary > (SELECT AVG(salary) FROM employees)
-ORDER BY salary ASC;
+    nextval('staff_id_seq'),
+    first_name,
+    'Main office'
+FROM employees;
 
 ##(конец)выполнение запроса №4
 
 ##(начало)выполнение запроса №5
 
-SELECT
-    last_name AS "Фамилия_Р",
-    job_id AS "Ид_долж"
-FROM employees
-WHERE department_id IN (
-    SELECT department_id
-    FROM departments
-    WHERE department_name = 'Executive'
-);
+UPDATE staff
+SET department = 'Innovations department'
+WHERE name LIKE 'I%';
 
 ##(конец)выполнение запроса №5
+
+##(начало)выполнение запроса №6
+
+DELETE FROM staff
+WHERE id::text LIKE '%7%';
+
+##(конец)выполнение запроса №6
+
+##(начало)выполнение запроса №7
+
+UPDATE staff
+SET department = (
+    SELECT department_name
+    FROM departments
+    WHERE department_id = 60
+)
+WHERE name IN (
+    SELECT e.first_name
+    FROM employees e
+    JOIN employees m ON e.manager_id = m.employee_id
+    WHERE m.first_name = 'Neena' AND m.last_name = 'Kochhar'
+);
+
+##(конец)выполнение запроса №7
+
+##(начало)выполнение запроса №8
+
+WITH RECURSIVE subordinates AS (
+    SELECT employee_id, first_name, last_name, manager_id
+    FROM employees
+    WHERE manager_id = :manager_id  -- заданный идентификатор менеджера
+
+    UNION ALL
+
+    SELECT e.employee_id, e.first_name, e.last_name, e.manager_id
+    FROM employees e
+    JOIN subordinates s ON e.manager_id = s.employee_id
+)
+SELECT * FROM subordinates;
+
+##(конец)выполнение запроса №8
