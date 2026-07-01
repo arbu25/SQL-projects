@@ -1,0 +1,16 @@
+CREATE TABLE Countries (
+    country_id INT NOT NULL PRIMARY KEY,
+    country_name VARCHAR(64) NOT NULL
+);
+
+CREATE TABLE Products (
+    product_id INT NOT NULL PRIMARY KEY,
+    product_name VARCHAR(2000) NOT NULL UNIQUE,
+    warehouse_row SMALLINT NOT NULL CHECK (warehouse_row > 0 AND warehouse_row < 1000),
+    row_place SMALLINT NOT NULL CHECK (row_place > 0 AND row_place < 1000),
+    supplier VARCHAR(2000) NOT NULL DEFAULT 'ОАО Царицынский мясокомбинат',
+    quantity SMALLINT NOT NULL CHECK (quantity > 0 AND quantity < 1000),
+    price NUMERIC(11, 2) NOT NULL,
+    country_id INT NOT NULL,
+    FOREIGN KEY (country_id) REFERENCES Countries(country_id)
+);
