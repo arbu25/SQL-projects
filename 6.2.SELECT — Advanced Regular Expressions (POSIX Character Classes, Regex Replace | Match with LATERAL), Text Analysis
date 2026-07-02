@@ -1,0 +1,85 @@
+DROP TABLE IF EXISTS workers;
+CREATE TABLE workers
+(
+    ln varchar(32) NOT NULL,
+    fn varchar(32) NOT NULL,
+    sn varchar(32),
+    work_description text NOT NULL,
+    links_description text NOT NULL,
+    id serial PRIMARY KEY
+);
+
+INSERT INTO workers VALUES
+('Иванов', 'Иван', 'Иванович', 'Создаю дизайны интерфейсов в фигма (www.figma.com). 
+Разрабатываю под ключ все элементы сайта от базового шаблона до адаптивной верстки каждого элемента. 
+Разрабатываю брэнд-буки.', 'Работаю в паре с бизнес-аналитиком Алиса.'),
+('Иванова', 'Алиса', 'Ивановна', 'Взаимодействую с клиентами в части постановки технического задания. 
+Провожу первоначальное обследование. Отвечаю за подготовку самого ТЗ. Отвечаю за постановку задачи
+разработчикам. Руковожу процессом сдачи сайтов в приемку.', 
+     'Работаю в паре с дизайнером Иван и программистом Петр.'),
+('Иванов', 'Петр', 'Дмитриевич', 
+     'Разрабатываю бэкенд компоненту системы (RubyОnRails). Проектирую БД (PostgreSQL/MySQL). Реализую контроллеры и другие компоненты.', 
+     'Работаю в паре с бизнес-аналитиком Алиса и программистом Владимир.'),
+('Владимиров', 'Владимир', 'Владимирович', 'Разрабатываю фронтэнд компоненту системы - React.js. Верстка. JS, CSS и т.д.', 
+     'Работаю в паре с программистом Петр.'),
+('Князев', 'Константин', 'Константинович', 'Руковожу проектами! 
+Провожу мероприятия по первоначальному вовлечению клиентов в проект. Формирую команду под проект. 
+Поддерживаю проект на всем жизненном пути (в том числе, в Jira).', 'Работаю в паре с бизнес-аналитиком Алиса.'),
+('Дулин', 'Ильяс', 'Абаканович', 'Руковожу блоком разработки.', 'Работаю в паре с менеджером-проектов Константин.');
+
+##(начало)выполнение запроса №1
+
+SELECT *
+FROM workers
+WHERE work_description !~ '[—–]';
+
+##(конец)выполнение запроса №1
+
+##(начало)выполнение запроса №2
+
+SELECT
+    w.id,
+    w.ln,
+    w.fn,
+    array_agg((m)[1]) AS names
+FROM workers w,
+LATERAL regexp_matches(
+    regexp_replace(w.links_description, '(^|[.!?]\s+)([А-ЯЁ][а-яё]*)', '\1', 'g'),
+    '[А-ЯЁ][а-яё]*',
+    'g'
+) AS m
+GROUP BY w.id, w.ln, w.fn;
+
+##(конец)выполнение запроса №2
+
+##(начало)выполнение запроса №3
+
+SELECT
+    ln,
+    fn,
+    LENGTH(second_half) - LENGTH(REGEXP_REPLACE(second_half, '[А-ЯЁ]', '', 'g')) AS upper_count
+FROM (
+    SELECT
+        ln,
+        fn,
+        SUBSTRING(work_description FROM (LENGTH(work_description) / 2 + 1)) AS second_half
+    FROM workers
+) t;
+
+
+##(конец)выполнение запроса №3
+
+##(начало)выполнение запроса №4
+
+SELECT *
+FROM (
+    SELECT
+        w.*,
+        LENGTH(work_description) - LENGTH(REGEXP_REPLACE(work_description, '[[:punct:]]', '', 'g')) AS punct_count,
+        LENGTH(work_description) - LENGTH(REGEXP_REPLACE(work_description, '[[:space:]]', '', 'g')) AS space_count
+    FROM workers w
+) t
+WHERE punct_count * 2 <= space_count;
+
+
+##(конец)выполнение запроса №4
