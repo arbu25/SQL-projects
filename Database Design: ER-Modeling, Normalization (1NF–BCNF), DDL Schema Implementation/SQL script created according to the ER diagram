@@ -1,0 +1,256 @@
+DROP TABLE IF EXISTS public.composition CASCADE;
+DROP TABLE IF EXISTS public.albom CASCADE;
+DROP TABLE IF EXISTS public.executor CASCADE;
+DROP TABLE IF EXISTS public.ganre CASCADE;
+
+CREATE TABLE IF NOT EXISTS public.ganre
+(
+    id integer NOT NULL,
+    name_ganre character varying NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT name_ganre_unique UNIQUE (name_ganre),
+    CONSTRAINT ganre_id_pos CHECK (id > 0),
+    CONSTRAINT ganre_name_not_empty CHECK (length(trim(name_ganre)) > 0)
+);
+
+CREATE TABLE IF NOT EXISTS public.executor
+(
+    id integer NOT NULL,
+    full_name character varying NOT NULL,
+    type character varying NOT NULL,
+    description text NOT NULL,
+    id_ganre integer NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT full_name_unique UNIQUE (full_name),
+    CONSTRAINT exec_id_pos CHECK (id > 0),
+    CONSTRAINT exec_name_not_empty CHECK (length(trim(full_name)) > 0),
+    CONSTRAINT exec_type_check CHECK (type IN ('Solo', 'Group', 'Band', 'Orchestra'))
+);
+
+CREATE TABLE IF NOT EXISTS public.albom
+(
+    id integer NOT NULL,
+    name_albom character varying NOT NULL,
+    id_ganre integer NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT name_albom_unique UNIQUE (name_albom),
+    CONSTRAINT albom_id_pos CHECK (id > 0),
+    CONSTRAINT albom_name_not_empty CHECK (length(trim(name_albom)) > 0)
+);
+
+CREATE TABLE IF NOT EXISTS public.composition
+(
+    id integer NOT NULL,
+    name character varying NOT NULL,
+    id_executor integer NOT NULL,
+    id_albom integer NOT NULL,
+    id_ganre integer NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT composition_name_unique UNIQUE (name),
+    CONSTRAINT comp_id_pos CHECK (id > 0),
+    CONSTRAINT comp_name_not_empty CHECK (length(trim(name)) > 0)
+);
+
+-- Добавляем внешние ключи с проверкой валидности
+ALTER TABLE IF EXISTS public.executor
+    ADD CONSTRAINT fk_executor_ganre
+    FOREIGN KEY (id_ganre)
+    REFERENCES public.ganre (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS public.albom
+    ADD CONSTRAINT fk_albom_ganre
+    FOREIGN KEY (id_ganre)
+    REFERENCES public.ganre (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS public.composition
+    ADD CONSTRAINT fk_composition_executor
+    FOREIGN KEY (id_executor)
+    REFERENCES public.executor (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS public.composition
+    ADD CONSTRAINT fk_composition_albom
+    FOREIGN KEY (id_albom)
+    REFERENCES public.albom (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS public.composition
+    ADD CONSTRAINT fk_composition_ganre
+    FOREIGN KEY (id_ganre)
+    REFERENCES public.ganre (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+	
+-- 1. Заполняем таблицу жанров (ganre)
+INSERT INTO public.ganre (id, name_ganre) VALUES
+    (1, 'Rock'),
+    (2, 'Pop'),
+    (3, 'Classical'),
+    (4, 'Jazz'),
+    (5, 'Electronic');
+
+-- 2. Заполняем таблицу исполнителей (executor)
+-- Важно: поле type должно строго соответствовать ('Solo', 'Group', 'Band', 'Orchestra')
+INSERT INTO public.executor (id, full_name, type, description, id_ganre) VALUES
+    (1, 'The Beatles', 'Band', 'Легендарная британская рок-группа из Ливерпуля.', 1),
+    (2, 'Michael Jackson', 'Solo', 'Американский певец, автор песен и танцор. Король поп-музыки.', 2),
+    (3, 'London Symphony Orchestra', 'Orchestra', 'Один из ведущих симфонических оркестров Великобритании.', 3),
+    (4, 'Miles Davis', 'Solo', 'Выдающийся американский джазовый трубач и композитор.', 4),
+    (5, 'Daft Punk', 'Group', 'Французский электронный дуэт, пионеры френч-хауса.', 5);
+
+-- 3. Заполняем таблицу альбомов (albom)
+INSERT INTO public.albom (id, name_albom, id_ganre) VALUES
+    (1, 'Abbey Road', 1),
+    (2, 'Thriller', 2),
+    (3, 'Beethoven: Symphonies Nos. 5 & 7', 3),
+    (4, 'Kind of Blue', 4),
+    (5, 'Discovery', 5);
+
+-- 4. Заполняем таблицу композиций (composition)
+-- Здесь мы связываем треки с их исполнителями, альбомами и жанрами (не менее 10 записей)
+INSERT INTO public.composition (id, name, id_executor, id_albom, id_ganre) VALUES
+    (1, 'Come Together', 1, 1, 1),
+    (2, 'Here Comes the Sun', 1, 1, 1),
+    (3, 'Something', 1, 1, 1),
+    (4, 'Billie Jean', 2, 2, 2),
+    (5, 'Beat It', 2, 2, 2),
+    (6, 'Thriller', 2, 2, 2),
+    (7, 'Symphony No. 5 in C Minor', 3, 3, 3),
+    (8, 'Symphony No. 7 in A Major', 3, 3, 3),
+    (9, 'So What', 4, 4, 4),
+    (10, 'Blue in Green', 4, 4, 4),
+    (11, 'One More Time', 5, 5, 5),
+    (12, 'Harder, Better, Faster, Stronger', 5, 5, 5);
+
+-- ====================================================================
+-- ШАГ 1: ДОБАВЛЯЕМ ПРОДОЛЖИТЕЛЬНОСТЬ ТРЕКОВ
+-- ====================================================================
+-- Добавляем колонку duration_sec (продолжительность в секундах)
+ALTER TABLE public.composition 
+ADD COLUMN duration_sec integer DEFAULT 0;
+
+UPDATE public.composition SET duration_sec = 254 WHERE id = 1; 
+UPDATE public.composition SET duration_sec = 185 WHERE id = 2; 
+UPDATE public.composition SET duration_sec = 170 WHERE id = 3; -- Меньше 3 минут
+UPDATE public.composition SET duration_sec = 294 WHERE id = 4; 
+UPDATE public.composition SET duration_sec = 258 WHERE id = 5; 
+UPDATE public.composition SET duration_sec = 357 WHERE id = 6; 
+UPDATE public.composition SET duration_sec = 420 WHERE id = 7; 
+UPDATE public.composition SET duration_sec = 540 WHERE id = 8; 
+UPDATE public.composition SET duration_sec = 562 WHERE id = 9; 
+UPDATE public.composition SET duration_sec = 337 WHERE id = 10;
+UPDATE public.composition SET duration_sec = 320 WHERE id = 11;
+UPDATE public.composition SET duration_sec = 150 WHERE id = 12; -- Меньше 3 минут
+
+
+
+CREATE TABLE IF NOT EXISTS public.executor_composition
+(
+    id_executor integer NOT NULL,
+    id_composition integer NOT NULL,
+    PRIMARY KEY (id_executor, id_composition),
+    CONSTRAINT fk_ec_executor FOREIGN KEY (id_executor) REFERENCES public.executor (id) ON DELETE CASCADE,
+    CONSTRAINT fk_ec_composition FOREIGN KEY (id_composition) REFERENCES public.composition (id) ON DELETE CASCADE
+);
+
+
+INSERT INTO public.executor_composition (id_executor, id_composition)
+SELECT id_executor, id FROM public.composition;
+
+
+INSERT INTO public.executor_composition (id_executor, id_composition) VALUES (5, 4);
+
+INSERT INTO public.executor_composition (id_executor, id_composition) VALUES (1, 11);
+
+
+ALTER TABLE public.composition DROP CONSTRAINT fk_composition_executor;
+ALTER TABLE public.composition DROP COLUMN id_executor;
+
+
+SELECT 
+    a.name_albom AS "Альбом",
+    c.name AS "Композиция",
+    e.full_name AS "Исполнитель"
+FROM public.composition c
+JOIN public.albom a ON c.id_albom = a.id
+JOIN public.executor_composition ec ON c.id = ec.id_composition
+JOIN public.executor e ON ec.id_executor = e.id
+ORDER BY a.name_albom, c.name;
+
+SELECT 
+    a.name_albom AS "Альбом",
+    COUNT(c.id) AS "Треков с несколькими исполнителями"
+FROM public.albom a
+JOIN public.composition c ON a.id = c.id_albom
+JOIN public.executor_composition ec ON c.id = ec.id_composition
+GROUP BY  a.name_albom, c.id
+HAVING COUNT(ec.id_executor) > 1;
+
+
+WITH AlbumDurations AS (
+    SELECT id_albom, SUM(duration_sec) AS total_time
+    FROM public.composition
+    GROUP BY id_albom
+),
+Shortest AS (
+    SELECT id_albom FROM AlbumDurations ORDER BY total_time ASC LIMIT 1
+),
+Longest AS (
+    SELECT id_albom FROM AlbumDurations ORDER BY total_time DESC LIMIT 1
+)
+UPDATE public.composition
+SET id_albom = (SELECT id_albom FROM Longest)
+WHERE id_albom = (SELECT id_albom FROM Shortest);
+
+-- Вывод того, что получилось:
+SELECT 
+    c.id AS "ID трека",
+    c.name AS "Название трека",
+    c.duration_sec AS "Длительность (сек)",
+    a.name_albom AS "Альбом",
+    c.id_albom AS "ID альбома"
+FROM public.composition c
+JOIN public.albom a ON c.id_albom = a.id
+ORDER BY c.duration_sec;
+
+-- Создаем пустой альбом для проверки
+INSERT INTO public.albom (id, name_albom, id_ganre) VALUES (99, 'Пустой Альбом', 1);
+
+-- Сам запрос на удаление (Задание 5)
+DELETE FROM public.albom
+WHERE id NOT IN (
+    SELECT DISTINCT id_albom 
+    FROM public.composition
+    WHERE id_albom IS NOT NULL
+);
+
+-- Проверка: SELECT * FROM public.albom; (Пустого альбома там больше не будет)
+
+
+WITH TrackCounts AS (
+    SELECT id_albom, COUNT(id) AS track_count
+    FROM public.composition
+    WHERE duration_sec > 180
+    GROUP BY id_albom
+)
+SELECT a.name_albom AS "Альбом", tc.track_count AS "Кол-во длинных треков"
+FROM TrackCounts tc
+JOIN public.albom a ON tc.id_albom = a.id
+WHERE tc.track_count = (SELECT MAX(track_count) FROM TrackCounts);
+
+1.для каждого албома вывести композицию с максимальной и минимальной 
+
+SELECT 
+    a.name_albom AS "Альбом",
+    MIN(c.duration_sec) AS "Самый короткий (сек)",
+    MAX(c.duration_sec) AS "Самый длинный (сек)"
+FROM public.composition c
+JOIN public.albom a ON c.id_albom = a.id
+GROUP BY a.name_albom;
