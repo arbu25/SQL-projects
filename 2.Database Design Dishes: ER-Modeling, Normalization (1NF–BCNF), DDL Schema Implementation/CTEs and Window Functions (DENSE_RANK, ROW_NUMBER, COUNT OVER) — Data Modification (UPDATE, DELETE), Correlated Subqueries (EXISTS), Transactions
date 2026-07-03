@@ -1,0 +1,737 @@
+BEGIN;
+
+DROP TABLE IF EXISTS public.dishes_instruments CASCADE;
+DROP TABLE IF EXISTS public.dishes_ingridients CASCADE;
+DROP TABLE IF EXISTS public.category_dishes CASCADE;
+DROP TABLE IF EXISTS public.unit_transformation CASCADE;
+DROP TABLE IF EXISTS public.instruments CASCADE;
+DROP TABLE IF EXISTS public.dishes CASCADE;
+DROP TABLE IF EXISTS public.ingridients CASCADE;
+DROP TABLE IF EXISTS public.standard_units CASCADE;
+DROP TABLE IF EXISTS public.category CASCADE;
+
+
+CREATE TABLE IF NOT EXISTS public.category
+(
+    category_id integer,
+    name character varying,
+    parent_id integer,
+    v_order integer,
+    h_order integer,
+    PRIMARY KEY (category_id),
+    CONSTRAINT category_name_unique UNIQUE (name),
+    CONSTRAINT category_parent_fk FOREIGN KEY (parent_id)
+        REFERENCES public.category (category_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS public.standard_units
+(
+    unit_id integer,
+    unit_namr character varying,
+    is_standart boolean DEFAULT TRUE,
+    PRIMARY KEY (unit_id),
+    CONSTRAINT standard_units_unit_name_unique UNIQUE (unit_namr)
+);
+
+
+CREATE TABLE IF NOT EXISTS public.ingridients
+(
+    ingridient_id integer,
+    short_description text,
+    unit_id integer,
+    PRIMARY KEY (ingridient_id),
+    CONSTRAINT ingridients_description_unique UNIQUE (short_description),
+    CONSTRAINT ingridients_unit_fk FOREIGN KEY (unit_id)
+        REFERENCES public.standard_units (unit_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS public.dishes
+(
+    dish_id integer,
+    name character varying,
+    prep_time interval,
+    instructions text,
+    category_id integer,
+    PRIMARY KEY (dish_id),
+    CONSTRAINT dishes_name_unique UNIQUE (name),
+    CONSTRAINT dishes_category_fk FOREIGN KEY (category_id)
+        REFERENCES public.category (category_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS public.unit_transformation
+(
+    transformation_id integer,
+    ingredient_id integer,
+    non_standard_name integer,
+    standart_amount numeric,
+    standard_unit integer,
+    PRIMARY KEY (transformation_id),
+    CONSTRAINT unit_transformation_unique UNIQUE 
+        (ingredient_id, non_standard_name, standard_unit),
+    CONSTRAINT unit_transformation_non_standard_fk FOREIGN KEY (non_standard_name)
+        REFERENCES public.standard_units (unit_id),
+    CONSTRAINT unit_transformation_standard_fk FOREIGN KEY (standard_unit)
+        REFERENCES public.standard_units (unit_id),
+    CONSTRAINT unit_transformation_ingredient_fk FOREIGN KEY (ingredient_id)
+        REFERENCES public.ingridients (ingridient_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS public.instruments
+(
+    id integer,
+    name character varying,
+    dishes_id integer,
+    PRIMARY KEY (id),
+    CONSTRAINT instruments_name_unique UNIQUE (name),
+    CONSTRAINT instruments_dishes_fk FOREIGN KEY (dishes_id)
+        REFERENCES public.dishes (dish_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS public.category_dishes
+(
+    category_category_id integer,
+    dishes_dish_id integer,
+    PRIMARY KEY (category_category_id, dishes_dish_id),
+    CONSTRAINT category_dishes_category_fk FOREIGN KEY (category_category_id)
+        REFERENCES public.category (category_id),
+    CONSTRAINT category_dishes_dishes_fk FOREIGN KEY (dishes_dish_id)
+        REFERENCES public.dishes (dish_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS public.dishes_ingridients
+(
+    dishes_dish_id integer,
+    ingridients_ingridient_id integer,
+    amount integer,
+    PRIMARY KEY (dishes_dish_id, ingridients_ingridient_id),
+    CONSTRAINT dishes_ingridients_dishes_fk FOREIGN KEY (dishes_dish_id)
+        REFERENCES public.dishes (dish_id),
+    CONSTRAINT dishes_ingridients_ingridients_fk FOREIGN KEY (ingridients_ingridient_id)
+        REFERENCES public.ingridients (ingridient_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS public.dishes_instruments
+(
+    dishes_dish_id integer,
+    instruments_id integer,
+    PRIMARY KEY (dishes_dish_id, instruments_id),
+    CONSTRAINT dishes_instruments_dishes_fk FOREIGN KEY (dishes_dish_id)
+        REFERENCES public.dishes (dish_id),
+    CONSTRAINT dishes_instruments_instruments_fk FOREIGN KEY (instruments_id)
+        REFERENCES public.instruments (id)
+);
+
+
+-- 1. Единицы измерения
+INSERT INTO public.standard_units (unit_id, unit_namr, is_standart) VALUES
+(1, 'грамм', TRUE),
+(2, 'килограмм', TRUE),
+(3, 'миллилитр', TRUE),
+(4, 'литр', TRUE),
+(5, 'штука', TRUE),
+(6, 'чайная ложка', FALSE),
+(7, 'столовая ложка', FALSE),
+(8, 'стакан', FALSE),
+(9, 'щепотка', FALSE),
+(10, 'зубчик', FALSE)
+ON CONFLICT DO NOTHING;
+
+
+-- 2. Категории блюд
+INSERT INTO public.category (category_id, name, parent_id, v_order, h_order) VALUES
+(1, 'Завтраки', NULL, 1, 1),
+(2, 'Супы', NULL, 2, 1),
+(3, 'Горячие блюда', NULL, 3, 1),
+(4, 'Салаты', NULL, 4, 1),
+(5, 'Десерты', NULL, 5, 1),
+(6, 'Напитки', NULL, 6, 1),
+(7, 'Выпечка', NULL, 7, 1),
+(8, 'Паста', 3, 1, 2)
+ON CONFLICT DO NOTHING;
+
+
+-- 3. Ингредиенты
+INSERT INTO public.ingridients (ingridient_id, short_description, unit_id) VALUES
+(1, 'Куриное филе', 1),
+(2, 'Картофель', 1),
+(3, 'Морковь', 1),
+(4, 'Лук репчатый', 1),
+(5, 'Помидоры', 1),
+(6, 'Огурцы', 1),
+(7, 'Макароны', 1),
+(8, 'Сыр твердый', 1),
+(9, 'Молоко', 3),
+(10, 'Яйцо куриное', 5),
+(11, 'Мука пшеничная', 1),
+(12, 'Сахар', 1),
+(13, 'Соль', 1),
+(14, 'Чеснок', 10),
+(15, 'Растительное масло', 3),
+(16, 'Оливковое масло', 3),
+(17, 'Подсолнечное масло', 3),
+(18, 'Разрыхлитель', 6)
+ON CONFLICT DO NOTHING;
+
+
+-- 4. Блюда
+INSERT INTO public.dishes (dish_id, name, prep_time, instructions, category_id) VALUES
+(1, 'Омлет с сыром', '00:15:00'::interval, 'Взбить яйца с молоком, добавить сыр и соль. Обжарить на сковороде до готовности.', 1),
+(2, 'Куриный суп', '01:00:00'::interval, 'Отварить курицу, добавить картофель, морковь и лук. Варить до готовности овощей.', 2),
+(3, 'Жареная курица с картофелем', '00:50:00'::interval, 'Нарезать курицу и картофель, добавить специи и обжарить до готовности.', 3),
+(4, 'Овощной салат', '00:20:00'::interval, 'Нарезать помидоры, огурцы и лук. Добавить масло и соль.', 4),
+(5, 'Паста с сыром', '00:30:00'::interval, 'Отварить макароны, добавить сыр и немного молока. Перемешать до однородности.', 8),
+(6, 'Блины', '00:40:00'::interval, 'Смешать молоко, яйца, муку и сахар. Выпекать тонкие блины на сковороде.', 7),
+(7, 'Сладкий молочный коктейль', '00:10:00'::interval, 'Смешать молоко и сахар, взбить до появления пены.', 6),
+(8, 'Простой пирог', '01:10:00'::interval, 'Смешать муку, яйца, молоко и сахар. Выпекать в духовке до готовности.', 5),
+(9, 'Простое печенье', '00:35:00'::interval, 'Смешать муку, яйца и сахар. Сформировать печенье и выпекать до готовности.', 5)
+ON CONFLICT DO NOTHING;
+
+
+-- 5. Кухонные инструменты
+INSERT INTO public.instruments (id, name, dishes_id) VALUES
+(1, 'Сковорода', NULL),
+(2, 'Кастрюля', NULL),
+(3, 'Нож', NULL),
+(4, 'Разделочная доска', NULL),
+(5, 'Ложка', NULL),
+(6, 'Венчик', NULL),
+(7, 'Духовка', NULL),
+(8, 'Блендер', NULL),
+(9, 'Терка', NULL),
+(10, 'Миска', NULL)
+ON CONFLICT DO NOTHING;
+
+
+-- 6. Преобразование нестандартных единиц в стандартные
+INSERT INTO public.unit_transformation 
+(transformation_id, ingredient_id, non_standard_name, standart_amount, standard_unit) VALUES
+(1, 13, 9, 1, 1),
+(2, 12, 6, 5, 1),
+(3, 15, 7, 15, 3),
+(4, 9, 8, 200, 3),
+(5, 11, 8, 160, 1),
+(6, 14, 10, 4, 1),
+(7, 18, 6, 8, 1)
+ON CONFLICT DO NOTHING;
+
+
+-- 7. Связь категорий и блюд
+INSERT INTO public.category_dishes (category_category_id, dishes_dish_id) VALUES
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 4),
+(8, 5),
+(7, 6),
+(6, 7),
+(5, 8),
+(5, 9)
+ON CONFLICT DO NOTHING;
+
+
+-- 8. Связь блюд и ингредиентов
+INSERT INTO public.dishes_ingridients 
+(dishes_dish_id, ingridients_ingridient_id, amount) VALUES
+-- Омлет с сыром
+(1, 10, 3),
+(1, 9, 100),
+(1, 8, 50),
+(1, 13, 2),
+(1, 15, 10),
+
+-- Куриный суп
+(2, 1, 300),
+(2, 2, 400),
+(2, 3, 100),
+(2, 4, 80),
+(2, 13, 5),
+
+-- Жареная курица с картофелем
+(3, 1, 400),
+(3, 2, 500),
+(3, 4, 100),
+(3, 14, 2),
+(3, 15, 30),
+
+-- Овощной салат
+(4, 5, 200),
+(4, 6, 200),
+(4, 4, 50),
+(4, 13, 3),
+(4, 16, 20),
+(4, 17, 20),
+
+-- Паста с сыром
+(5, 7, 250),
+(5, 8, 100),
+(5, 9, 100),
+(5, 13, 3),
+
+-- Блины
+(6, 11, 250),
+(6, 9, 500),
+(6, 10, 2),
+(6, 12, 40),
+(6, 13, 2),
+(6, 15, 20),
+(6, 18, 1),
+
+-- Молочный коктейль
+(7, 9, 300),
+(7, 12, 30),
+
+-- Простой пирог
+(8, 11, 300),
+(8, 10, 3),
+(8, 9, 200),
+(8, 12, 100),
+(8, 18, 2),
+
+-- Простое печенье
+(9, 11, 200),
+(9, 10, 2),
+(9, 12, 80)
+ON CONFLICT DO NOTHING;
+
+
+-- 9. Связь блюд и инструментов
+INSERT INTO public.dishes_instruments 
+(dishes_dish_id, instruments_id) VALUES
+-- Омлет
+(1, 1),
+(1, 6),
+(1, 10),
+
+-- Куриный суп
+(2, 2),
+(2, 3),
+(2, 4),
+(2, 5),
+
+-- Жареная курица
+(3, 1),
+(3, 3),
+(3, 4),
+
+-- Овощной салат
+(4, 3),
+(4, 4),
+(4, 10),
+
+-- Паста с сыром
+(5, 2),
+(5, 5),
+(5, 9),
+
+-- Блины
+(6, 1),
+(6, 6),
+(6, 10),
+
+-- Молочный коктейль
+(7, 8),
+
+-- Пирог
+(8, 7),
+(8, 10),
+(8, 6),
+
+-- Простое печенье
+(9, 7),
+(9, 10)
+ON CONFLICT DO NOTHING;
+
+COMMIT;
+
+-- 0
+WITH ingredient_usage AS (
+    SELECT
+        i.short_description AS ingredient_name,
+        COUNT(DISTINCT di.dishes_dish_id) AS dish_count,
+        DENSE_RANK() OVER (
+            ORDER BY COUNT(DISTINCT di.dishes_dish_id) DESC
+        ) AS rnk
+    FROM public.ingridients i
+    JOIN public.dishes_ingridients di
+        ON i.ingridient_id = di.ingridients_ingridient_id
+    GROUP BY i.ingridient_id, i.short_description
+)
+SELECT ingredient_name
+FROM ingredient_usage
+WHERE rnk = 1;
+
+-- 1
+WITH dish_weight AS (
+    SELECT
+        d.name AS dish_name,
+        SUM(di.amount) AS total_weight,
+        DENSE_RANK() OVER (
+            ORDER BY SUM(di.amount) DESC
+        ) AS rnk
+    FROM public.dishes d
+    JOIN public.dishes_ingridients di
+        ON d.dish_id = di.dishes_dish_id
+    GROUP BY d.dish_id, d.name
+)
+SELECT dish_name
+FROM dish_weight
+WHERE rnk = 1;
+
+--2
+SELECT d.name AS dish_name
+FROM public.dishes d
+JOIN public.dishes_ingridients di
+    ON d.dish_id = di.dishes_dish_id
+JOIN public.ingridients i
+    ON i.ingridient_id = di.ingridients_ingridient_id
+GROUP BY d.dish_id, d.name
+HAVING
+    COUNT(*) = COUNT(
+        CASE
+            WHEN i.short_description IN ('Мука пшеничная', 'Яйцо куриное', 'Сахар')
+            THEN 1
+        END
+    )
+    AND COUNT(DISTINCT i.short_description) = 3;
+
+--3
+DELETE FROM public.dishes_ingridients di_sun
+USING public.ingridients i_sun
+WHERE di_sun.ingridients_ingridient_id = i_sun.ingridient_id
+  AND LOWER(i_sun.short_description) = LOWER('Подсолнечное масло')
+  AND EXISTS (
+      SELECT 1
+      FROM public.dishes_ingridients di_olive
+      JOIN public.ingridients i_olive
+          ON i_olive.ingridient_id = di_olive.ingridients_ingridient_id
+      WHERE di_olive.dishes_dish_id = di_sun.dishes_dish_id
+        AND LOWER(i_olive.short_description) = LOWER('Оливковое масло')
+  );
+
+--4
+BEGIN;
+
+WITH teaspoon_ingredients AS (
+    SELECT i.ingridient_id
+    FROM public.ingridients i
+    JOIN public.standard_units su
+        ON su.unit_id = i.unit_id
+    WHERE LOWER(su.unit_namr) = LOWER('чайная ложка')
+)
+UPDATE public.dishes_ingridients di
+SET amount = amount * 8
+FROM teaspoon_ingredients ti
+WHERE di.ingridients_ingridient_id = ti.ingridient_id;
+
+
+UPDATE public.ingridients i
+SET unit_id = (
+    SELECT su_gram.unit_id
+    FROM public.standard_units su_gram
+    WHERE LOWER(su_gram.unit_namr) = LOWER('грамм')
+    LIMIT 1
+)
+WHERE i.unit_id = (
+    SELECT su_spoon.unit_id
+    FROM public.standard_units su_spoon
+    WHERE LOWER(su_spoon.unit_namr) = LOWER('чайная ложка')
+    LIMIT 1
+)
+AND EXISTS (
+    SELECT 1
+    FROM public.dishes_ingridients di
+    WHERE di.ingridients_ingridient_id = i.ingridient_id
+);
+
+COMMIT;
+
+--5
+
+WITH recipe_items AS (
+    SELECT DISTINCT
+        d.dish_id,
+        d.name AS dish_name,
+        i.ingridient_id,
+        i.short_description AS ingredient_name
+    FROM public.dishes d
+    JOIN public.dishes_ingridients di
+        ON d.dish_id = di.dishes_dish_id
+    JOIN public.ingridients i
+        ON i.ingridient_id = di.ingridients_ingridient_id
+)
+SELECT
+    dish_name,
+    ingredient_name,
+    COUNT(*) OVER (
+        PARTITION BY ingridient_id
+    ) AS ingredient_count_in_all_recipes,
+    COUNT(*) OVER (
+        PARTITION BY dish_id
+    ) AS ingredients_count_in_dish
+FROM recipe_items
+ORDER BY dish_name, ingredient_name;
+
+--6
+
+SELECT
+    c.name AS category_name,
+    d.name AS dish_name,
+    ROW_NUMBER() OVER (
+        PARTITION BY c.category_id, d.dish_id
+        ORDER BY i.short_description
+    ) AS ingredient_number,
+    i.short_description AS ingredient_name,
+    di.amount
+FROM public.category c
+JOIN public.category_dishes cd
+    ON c.category_id = cd.category_category_id
+JOIN public.dishes d
+    ON d.dish_id = cd.dishes_dish_id
+JOIN public.dishes_ingridients di
+    ON d.dish_id = di.dishes_dish_id
+JOIN public.ingridients i
+    ON i.ingridient_id = di.ingridients_ingridient_id
+ORDER BY
+    c.name,
+    d.name,
+    i.short_description;
+--7
+-- выведите все доступные ингредиенты и в следующей колоночке название всех блюд в которые они входят через запятую
+SELECT
+    i.short_description AS ingredient_name,
+    COALESCE(
+        STRING_AGG(DISTINCT d.name, ', ' ORDER BY d.name),
+        'Не используется ни в одном блюде'
+    ) AS dishes_names
+FROM public.ingridients i
+LEFT JOIN public.dishes_ingridients di
+    ON i.ingridient_id = di.ingridients_ingridient_id
+LEFT JOIN public.dishes d
+    ON d.dish_id = di.dishes_dish_id
+GROUP BY
+    i.ingridient_id,
+    i.short_description
+ORDER BY
+    i.short_description;
+
+##(начало)выполнение запроса №0
+
+WITH ingredient_usage AS (
+    SELECT
+        i.short_description AS ingredient_name,
+        COUNT(DISTINCT di.dishes_dish_id) AS dish_count,
+        DENSE_RANK() OVER (
+            ORDER BY COUNT(DISTINCT di.dishes_dish_id) DESC
+        ) AS place
+    FROM public.ingridients i
+    JOIN public.dishes_ingridients di
+        ON di.ingridients_ingridient_id = i.ingridient_id
+    GROUP BY
+        i.ingridient_id,
+        i.short_description
+)
+SELECT ingredient_name
+FROM ingredient_usage
+WHERE place = 1;
+
+##(конец)выполнение запроса №0
+
+##(начало)выполнение запроса №1
+
+WITH dish_weight AS (
+    SELECT
+        d.name AS dish_name,
+        SUM(di.amount) AS total_amount,
+        DENSE_RANK() OVER (
+            ORDER BY SUM(di.amount) DESC
+        ) AS place
+    FROM public.dishes d
+    JOIN public.dishes_ingridients di
+        ON di.dishes_dish_id = d.dish_id
+    GROUP BY
+        d.dish_id,
+        d.name
+)
+SELECT dish_name
+FROM dish_weight
+WHERE place = 1;
+
+##(конец)выполнение запроса №1
+
+##(начало)выполнение запроса №2
+
+SELECT d.name AS dish_name
+FROM public.dishes d
+JOIN public.dishes_ingridients di
+    ON di.dishes_dish_id = d.dish_id
+JOIN public.ingridients i
+    ON i.ingridient_id = di.ingridients_ingridient_id
+GROUP BY
+    d.dish_id,
+    d.name
+HAVING
+    COUNT(*) = COUNT(*) FILTER (
+        WHERE i.short_description IN (
+            'Мука пшеничная',
+            'Яйцо куриное',
+            'Сахар'
+        )
+    )
+    AND COUNT(DISTINCT i.short_description) = 3;
+
+##(конец)выполнение запроса №2
+
+##(начало)выполнение запроса №3
+
+DELETE FROM public.dishes_ingridients AS di_sunflower
+USING public.ingridients AS i_sunflower
+WHERE di_sunflower.ingridients_ingridient_id =
+      i_sunflower.ingridient_id
+
+  AND LOWER(i_sunflower.short_description) =
+      LOWER('Подсолнечное масло')
+
+  AND EXISTS (
+      SELECT 1
+      FROM public.dishes_ingridients AS di_olive
+      JOIN public.ingridients AS i_olive
+          ON i_olive.ingridient_id =
+             di_olive.ingridients_ingridient_id
+      WHERE di_olive.dishes_dish_id =
+            di_sunflower.dishes_dish_id
+        AND LOWER(i_olive.short_description) =
+            LOWER('Оливковое масло')
+  );
+
+##(конец)выполнение запроса №3
+
+##(начало)выполнение запроса №4
+
+BEGIN;
+
+UPDATE public.dishes_ingridients AS di
+SET amount = di.amount * 8
+FROM public.ingridients AS i
+JOIN public.standard_units AS su
+    ON su.unit_id = i.unit_id
+WHERE di.ingridients_ingridient_id = i.ingridient_id
+  AND LOWER(su.unit_namr) = LOWER('чайная ложка');
+
+
+UPDATE public.ingridients AS i
+SET unit_id = gram.unit_id
+FROM public.standard_units AS teaspoon,
+     public.standard_units AS gram
+WHERE i.unit_id = teaspoon.unit_id
+  AND LOWER(teaspoon.unit_namr) = LOWER('чайная ложка')
+  AND LOWER(gram.unit_namr) = LOWER('грамм')
+  AND EXISTS (
+      SELECT 1
+      FROM public.dishes_ingridients AS di
+      WHERE di.ingridients_ingridient_id =
+            i.ingridient_id
+  );
+
+COMMIT;
+
+##(конец)выполнение запроса №4
+
+##(начало)выполнение запроса №5
+
+WITH recipe_items AS (
+    SELECT DISTINCT
+        d.dish_id,
+        d.name AS dish_name,
+        i.ingridient_id,
+        i.short_description AS ingredient_name
+    FROM public.dishes d
+    JOIN public.dishes_ingridients di
+        ON di.dishes_dish_id = d.dish_id
+    JOIN public.ingridients i
+        ON i.ingridient_id =
+           di.ingridients_ingridient_id
+)
+SELECT
+    dish_name,
+    ingredient_name,
+
+    COUNT(*) OVER (
+        PARTITION BY ingridient_id
+    ) AS ingredient_count_in_all_recipes,
+
+    COUNT(*) OVER (
+        PARTITION BY dish_id
+    ) AS ingredients_count_in_dish
+
+FROM recipe_items
+ORDER BY
+    dish_name,
+    ingredient_name;
+
+##(конец)выполнение запроса №5
+
+##(начало)выполнение запроса №6
+
+SELECT
+    c.name AS category_name,
+    d.name AS dish_name,
+
+    ROW_NUMBER() OVER (
+        PARTITION BY c.category_id, d.dish_id
+        ORDER BY i.short_description
+    ) AS ingredient_number,
+
+    i.short_description AS ingredient_name
+
+FROM public.category c
+
+JOIN public.category_dishes cd
+    ON cd.category_category_id = c.category_id
+
+JOIN public.dishes d
+    ON d.dish_id = cd.dishes_dish_id
+
+JOIN public.dishes_ingridients di
+    ON di.dishes_dish_id = d.dish_id
+
+JOIN public.ingridients i
+    ON i.ingridient_id =
+       di.ingridients_ingridient_id
+
+ORDER BY
+    c.name,
+    d.name,
+    i.short_description;
+
+##(конец)выполнение запроса №6
+
+##(начало)выполнение запроса №7
+
+DELETE FROM public.dishes_ingridients AS di_sunflower
+USING public.ingridients AS i_sunflower
+WHERE di_sunflower.ingridients_ingridient_id =
+      i_sunflower.ingridient_id
+
+  AND LOWER(i_sunflower.short_description) =
+      LOWER('Подсолнечное масло')
+
+  AND EXISTS (
+      SELECT 1
+      FROM public.dishes_ingridients AS di_olive
+      JOIN public.ingridients AS i_olive
+          ON i_olive.ingridient_id =
+             di_olive.ingridients_ingridient_id
+      WHERE di_olive.dishes_dish_id =
+            di_sunflower.dishes_dish_id
+        AND LOWER(i_olive.short_description) =
+            LOWER('Оливковое масло')
+  );
+
+##(конец)выполнение запроса №7
