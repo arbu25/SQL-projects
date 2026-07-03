@@ -1,10 +1,10 @@
 ```mermaid
 erDiagram
-    ganre ||--o{ executor : "id_ganre"
-    ganre ||--o{ albom : "id_ganre"
-    ganre ||--o{ composition : "id_ganre"
-    executor ||--o{ composition : "id_executor"
-    albom ||--o{ composition : "id_albom"
+    ganre |--o{ executor : "id_ganre"
+    ganre |--o{ albom : "id_ganre"
+    ganre |--o{ composition : "id_ganre"
+    executor |--o{ composition : "id_executor"
+    albom |--o{ composition : "id_albom"
 
     ganre {
         integer id PK
