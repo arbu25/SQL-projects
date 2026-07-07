@@ -39,23 +39,23 @@ INTO bd_employees VALUES
 ('Ivanov�-Skladovsk�ya-Petrova', 'Ivanka', '89167748924', 'ii2@mail.mephi.ru', 60);
 SELECT * FROM bd_employees;
 
-##(начало)выполнение запроса №1
+--(начало)выполнение запроса №1
 
 SELECT *
 FROM bd_employees
 WHERE phone_number ~ '^8-\(49[59]\)-\d{3}-\d{2}-\d{2}$';
 
-##(конец)выполнение запроса №1
+--(конец)выполнение запроса №1
 
-##(начало)выполнение запроса №2
+--(начало)выполнение запроса №2
 
 SELECT *
 FROM bd_employees
 WHERE phone_number ~ '[^0-9][0-9]{4}[^0-9]';
 
-##(конец)выполнение запроса №2
+--(конец)выполнение запроса №2
 
-##(начало)выполнение запроса №3
+--(начало)выполнение запроса №3
 
 SELECT
     last_name,
@@ -63,23 +63,22 @@ SELECT
 FROM bd_employees;
 
 
-##(конец)выполнение запроса №3
+--(конец)выполнение запроса №3
 
-##(начало)выполнение запроса №4
+--(начало)выполнение запроса №4
 
 SELECT *
 FROM bd_employees
 WHERE (LENGTH(first_name) - LENGTH(REGEXP_REPLACE(first_name, '[aeiouAEIOU]', '', 'g'))) <= 3;
 
 
-##(конец)выполнение запроса №4
+--(конец)выполнение запроса №4
 
-##(начало)выполнение запроса №5
+--(начало)выполнение запроса №5
 
 SELECT
     last_name,
     (LENGTH(last_name) - LENGTH(REGEXP_REPLACE(last_name, '[a-z]', '', 'g'))) AS lowercase_count
 FROM bd_employees;
 
-
-##(конец)выполнение запроса №5
+--(конец)выполнение запроса №5
