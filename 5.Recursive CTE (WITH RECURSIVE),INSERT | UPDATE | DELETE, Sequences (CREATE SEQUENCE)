@@ -306,7 +306,7 @@ INSERT INTO job_history VALUES
 (176, '01.01.2007', '31.12.2007', 'SA_MAN', 80),
 (200, '01.07.2002', '31.12.2006', 'AC_ACCOUNT', 90);
 
-##(начало)выполнение запроса №1
+--(начало)выполнение запроса №1
 
 CREATE TABLE staff
 (
@@ -315,25 +315,25 @@ CREATE TABLE staff
     department VARCHAR(64) NOT NULL
 );
 
-##(конец)выполнение запроса №1
+--(конец)выполнение запроса №1
 
-##(начало)выполнение запроса №2
+--(начало)выполнение запроса №2
 
 CREATE SEQUENCE staff_id_seq
     START WITH 12
     INCREMENT BY 3
     NO CYCLE;
 
-##(конец)выполнение запроса №2
+--(конец)выполнение запроса №2
 
-##(начало)выполнение запроса №3
+--(начало)выполнение запроса №3
 
 INSERT INTO staff (id, name, department)
 VALUES (nextval('staff_id_seq'), 'Ivan Makarenko', 'Director');
 
-##(конец)выполнение запроса №3
+--(конец)выполнение запроса №3
 
-##(начало)выполнение запроса №4
+--(начало)выполнение запроса №4
 
 INSERT INTO staff (id, name, department)
 SELECT
@@ -342,24 +342,24 @@ SELECT
     'Main office'
 FROM employees;
 
-##(конец)выполнение запроса №4
+--(конец)выполнение запроса №4
 
-##(начало)выполнение запроса №5
+--(начало)выполнение запроса №5
 
 UPDATE staff
 SET department = 'Innovations department'
 WHERE name LIKE 'I%';
 
-##(конец)выполнение запроса №5
+--(конец)выполнение запроса №5
 
-##(начало)выполнение запроса №6
+--(начало)выполнение запроса №6
 
 DELETE FROM staff
 WHERE id::text LIKE '%7%';
 
-##(конец)выполнение запроса №6
+--(конец)выполнение запроса №6
 
-##(начало)выполнение запроса №7
+--(начало)выполнение запроса №7
 
 UPDATE staff
 SET department = (
@@ -374,9 +374,9 @@ WHERE name IN (
     WHERE m.first_name = 'Neena' AND m.last_name = 'Kochhar'
 );
 
-##(конец)выполнение запроса №7
+--(конец)выполнение запроса №7
 
-##(начало)выполнение запроса №8
+--(начало)выполнение запроса №8
 
 WITH RECURSIVE subordinates AS (
     SELECT employee_id, first_name, last_name, manager_id
@@ -391,4 +391,4 @@ WITH RECURSIVE subordinates AS (
 )
 SELECT * FROM subordinates;
 
-##(конец)выполнение запроса №8
+--(конец)выполнение запроса №8
