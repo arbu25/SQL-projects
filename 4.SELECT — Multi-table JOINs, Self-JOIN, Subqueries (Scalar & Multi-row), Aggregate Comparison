@@ -331,9 +331,9 @@ JOIN countries c ON l.country_id = c.country_id
 JOIN regions r ON c.region_id = r.region_id
 ORDER BY e.first_name DESC;
 
-##(конец)выполнение запроса №2
+--(конец)выполнение запроса №2
 
-##(начало)выполнение запроса №3
+--(начало)выполнение запроса №3
 
 SELECT
     e.last_name AS "Фамилия_Р",
@@ -344,9 +344,9 @@ FROM employees e
 JOIN employees m ON e.manager_id = m.employee_id
 WHERE e.hire_date < m.hire_date;
 
-##(конец)выполнение запроса №3
+--(конец)выполнение запроса №3
 
-##(начало)выполнение запроса №4
+--(начало)выполнение запроса №4
 
 SELECT
     last_name AS "Фамилия_Р",
@@ -356,9 +356,9 @@ FROM employees
 WHERE salary > (SELECT AVG(salary) FROM employees)
 ORDER BY salary ASC;
 
-##(конец)выполнение запроса №4
+--(конец)выполнение запроса №4
 
-##(начало)выполнение запроса №5
+--(начало)выполнение запроса №5
 
 SELECT
     last_name AS "Фамилия_Р",
@@ -369,4 +369,4 @@ WHERE department_id IN (
     FROM departments
     WHERE department_name = 'Executive'
 
-##(конец)выполнение запроса №5
+--(конец)выполнение запроса №5
