@@ -88,7 +88,7 @@ ALTER TABLE IF EXISTS public.composition
     ON DELETE NO ACTION;
 
 	
--- 1. Заполняем таблицу жанров (ganre)
+--1. Заполняем таблицу жанров (ganre)
 INSERT INTO public.ganre (id, name_ganre) VALUES
     (1, 'Rock'),
     (2, 'Pop'),
@@ -96,8 +96,8 @@ INSERT INTO public.ganre (id, name_ganre) VALUES
     (4, 'Jazz'),
     (5, 'Electronic');
 
--- 2. Заполняем таблицу исполнителей (executor)
--- Важно: поле type должно строго соответствовать ('Solo', 'Group', 'Band', 'Orchestra')
+--2. Заполняем таблицу исполнителей (executor)
+--Важно: поле type должно строго соответствовать ('Solo', 'Group', 'Band', 'Orchestra')
 INSERT INTO public.executor (id, full_name, type, description, id_ganre) VALUES
     (1, 'The Beatles', 'Band', 'Легендарная британская рок-группа из Ливерпуля.', 1),
     (2, 'Michael Jackson', 'Solo', 'Американский певец, автор песен и танцор. Король поп-музыки.', 2),
@@ -105,7 +105,7 @@ INSERT INTO public.executor (id, full_name, type, description, id_ganre) VALUES
     (4, 'Miles Davis', 'Solo', 'Выдающийся американский джазовый трубач и композитор.', 4),
     (5, 'Daft Punk', 'Group', 'Французский электронный дуэт, пионеры френч-хауса.', 5);
 
--- 3. Заполняем таблицу альбомов (albom)
+--3. Заполняем таблицу альбомов (albom)
 INSERT INTO public.albom (id, name_albom, id_ganre) VALUES
     (1, 'Abbey Road', 1),
     (2, 'Thriller', 2),
@@ -113,8 +113,8 @@ INSERT INTO public.albom (id, name_albom, id_ganre) VALUES
     (4, 'Kind of Blue', 4),
     (5, 'Discovery', 5);
 
--- 4. Заполняем таблицу композиций (composition)
--- Здесь мы связываем треки с их исполнителями, альбомами и жанрами (не менее 10 записей)
+--4. Заполняем таблицу композиций (composition)
+--Здесь мы связываем треки с их исполнителями, альбомами и жанрами (не менее 10 записей)
 INSERT INTO public.composition (id, name, id_executor, id_albom, id_ganre) VALUES
     (1, 'Come Together', 1, 1, 1),
     (2, 'Here Comes the Sun', 1, 1, 1),
@@ -129,10 +129,6 @@ INSERT INTO public.composition (id, name, id_executor, id_albom, id_ganre) VALUE
     (11, 'One More Time', 5, 5, 5),
     (12, 'Harder, Better, Faster, Stronger', 5, 5, 5);
 
--- ====================================================================
--- ШАГ 1: ДОБАВЛЯЕМ ПРОДОЛЖИТЕЛЬНОСТЬ ТРЕКОВ
--- ====================================================================
--- Добавляем колонку duration_sec (продолжительность в секундах)
 ALTER TABLE public.composition 
 ADD COLUMN duration_sec integer DEFAULT 0;
 
@@ -209,7 +205,7 @@ UPDATE public.composition
 SET id_albom = (SELECT id_albom FROM Longest)
 WHERE id_albom = (SELECT id_albom FROM Shortest);
 
--- Вывод того, что получилось:
+--Вывод того, что получилось:
 SELECT 
     c.id AS "ID трека",
     c.name AS "Название трека",
@@ -220,19 +216,16 @@ FROM public.composition c
 JOIN public.albom a ON c.id_albom = a.id
 ORDER BY c.duration_sec;
 
--- Создаем пустой альбом для проверки
+--Создаем пустой альбом для проверки
 INSERT INTO public.albom (id, name_albom, id_ganre) VALUES (99, 'Пустой Альбом', 1);
 
--- Сам запрос на удаление (Задание 5)
+--Сам запрос на удаление (Задание 5)
 DELETE FROM public.albom
 WHERE id NOT IN (
     SELECT DISTINCT id_albom 
     FROM public.composition
     WHERE id_albom IS NOT NULL
 );
-
--- Проверка: SELECT * FROM public.albom; (Пустого альбома там больше не будет)
-
 
 WITH TrackCounts AS (
     SELECT id_albom, COUNT(id) AS track_count
@@ -245,8 +238,7 @@ FROM TrackCounts tc
 JOIN public.albom a ON tc.id_albom = a.id
 WHERE tc.track_count = (SELECT MAX(track_count) FROM TrackCounts);
 
-1.для каждого албома вывести композицию с максимальной и минимальной 
-
+--для каждого албома вывести композицию с максимальной и минимальной 
 SELECT 
     a.name_albom AS "Альбом",
     MIN(c.duration_sec) AS "Самый короткий (сек)",
